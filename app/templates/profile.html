@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Портал мониторинга{% endblock %}
+{% block navigation %}
+<form action="/portal/logout" method="post">
+  <button class="text-button" type="submit">Выйти</button>
+</form>
+{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <p class="eyebrow">Профиль</p>
+  <h1>Здравствуйте, {{ user.username }}</h1>
+  <p class="muted">Ваш доступ к мониторингу определён компанией в системе.</p>
+</section>
+<section class="detail-card" aria-label="Данные пользователя">
+  <dl class="details">
+    <div><dt>Логин</dt><dd>{{ user.username }}</dd></div>
+    <div><dt>Компания</dt><dd>{{ user.company.name }}</dd></div>
+    <div><dt>Бизнес-роль</dt><dd>{{ 'Аналитик' if user.business_role == 'analyst' else 'Руководитель' }}</dd></div>
+  </dl>
+  <a class="button primary" href="/portal/monitoring">Открыть мониторинг</a>
+</section>
+{% endblock %}

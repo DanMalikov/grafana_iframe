@@ -1,0 +1,9 @@
+.git
+.env*
+secrets/
+LOCAL_CREDENTIALS.md
+.idea/
+.vscode/
+.browser_test_deps/
+__pycache__/
+*.pyc

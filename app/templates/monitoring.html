@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Мониторинг — Портал мониторинга{% endblock %}
+{% block navigation %}
+<form id="logout-form" action="/portal/logout" method="post">
+  <button class="text-button" type="submit">Выйти</button>
+</form>
+{% endblock %}
+{% block content %}
+<section class="page-heading monitoring-heading">
+  <div>
+    <p class="eyebrow">Мониторинг</p>
+    <h1>{{ user.company.name }}</h1>
+    <p class="muted">{{ user.username }} · {{ 'Аналитик' if user.business_role == 'analyst' else 'Руководитель' }}</p>
+  </div>
+  <nav class="actions" aria-label="Действия">
+    <a class="button secondary" href="/portal">К профилю</a>
+    <a class="button primary" href="/portal/monitoring">Обновить мониторинг</a>
+  </nav>
+</section>
+<iframe class="dashboard" title="Дашборд {{ user.company.name }}"
+        src="{{ iframe_src }}" referrerpolicy="no-referrer"></iframe>
+<script>
+  document.getElementById("logout-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await fetch("/portal/logout", {
+      method: "POST",
+      referrerPolicy: "origin",
+      credentials: "same-origin"
+    });
+    if (response.ok) {
+      window.location.assign("/portal/login");
+    }
+  });
+</script>
+{% endblock %}

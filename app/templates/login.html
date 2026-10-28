@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Вход — Портал мониторинга{% endblock %}
+{% block content %}
+<section class="login-card">
+  <p class="eyebrow">Локальный портал</p>
+  <h1>Вход в систему</h1>
+  <p class="muted">Войдите, чтобы открыть мониторинг своей компании.</p>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form action="/portal/login" method="post">
+    <label for="username">Логин</label>
+    <input id="username" name="username" type="text" value="{{ username or '' }}"
+           autocomplete="username" required autofocus>
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password"
+           autocomplete="current-password" required>
+    <button class="button primary full-width" type="submit">Войти</button>
+  </form>
+</section>
+{% endblock %}

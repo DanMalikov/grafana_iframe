@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Grafana PoC credentials and RSA keys
+secrets/
+LOCAL_CREDENTIALS.md
+.env.*
+*.pem
+*.key
+*.secret
+.idea/
+.vscode/
+.browser_test_deps/

@@ -1,0 +1,113 @@
+services:
+  init:
+    build: .
+    command: python scripts/bootstrap.py
+    environment:
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+    volumes:
+      - ./secrets:/legacy:ro
+      - jwt_private:/state/jwt-private
+      - jwt_public:/state/jwt-public
+      - mysql_root_secret:/state/mysql-root
+      - mysql_app_secret:/state/mysql-app
+      - api_secrets:/state/api-secrets
+      - grafana_admin_secret:/state/grafana-admin
+      - clickhouse_admin_secret:/state/clickhouse-admin
+      - clickhouse_reader_secret:/state/clickhouse-reader
+      - mysql_data:/mysql-data:ro
+      - grafana_data:/grafana-data:ro
+      - clickhouse_data:/clickhouse-data:ro
+    restart: "no"
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: grafana_iframe
+      MYSQL_USER: app
+      MYSQL_ROOT_PASSWORD_FILE: /run/mysql-root/password
+      MYSQL_PASSWORD_FILE: /run/mysql-app/password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_root_secret:/run/mysql-root:ro
+      - mysql_app_secret:/run/mysql-app:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u app --password=\"$$(cat /run/mysql-app/password)\" -e 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: grafana_iframe
+      MYSQL_USER: app
+      GRAFANA_BASE_URL: ${GRAFANA_BASE_URL:-http://localhost:3001}
+    volumes:
+      - jwt_private:/run/jwt-private:ro
+      - mysql_app_secret:/run/mysql-app:ro
+      - api_secrets:/run/api-secrets:ro
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      mysql:
+        condition: service_healthy
+    command: ["sh", "-c", "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8.4.11
+    environment:
+      CLICKHOUSE_USER: demo_admin
+      CLICKHOUSE_PASSWORD_FILE: /run/clickhouse-admin/password
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_admin_secret:/run/clickhouse-admin:ro
+      - clickhouse_reader_secret:/run/clickhouse-reader:ro
+      - ./clickhouse/init:/docker-entrypoint-initdb.d:ro
+      - ./clickhouse:/demo:ro
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user demo_admin --password=\"$$(cat /run/clickhouse-admin/password)\" --query 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/grafana-admin/password
+      GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource@4.23.2
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana.ini:/etc/grafana/grafana.ini:ro
+      - jwt_public:/etc/grafana/jwt:ro
+      - grafana_admin_secret:/run/grafana-admin:ro
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+
+volumes:
+  grafana_data:
+  mysql_data:
+  jwt_private:
+  jwt_public:
+  mysql_root_secret:
+  mysql_app_secret:
+  api_secrets:
+  grafana_admin_secret:
+  clickhouse_data:
+  clickhouse_admin_secret:
+  clickhouse_reader_secret:
