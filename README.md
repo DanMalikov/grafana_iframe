@@ -64,22 +64,19 @@ MSYS_NO_PATHCONV=1 docker compose exec -T mysql cat /run/mysql-root/password
    Default database `default`, Username `grafana_reader` и пароль из раздела 2.
    Нажмите `Save & test`. Повторите настройку во второй Organization.
 3. **Дашборд:** если дашборда с UID `adkxztz` ещё нет, в каждой Organization
+
+(в main.py на 250 странице поменять)
+после замены пересобрать api:
+``` bash
+docker compose up -d --build --no-deps api
+```
+
+
    откройте `Dashboards → New → Import dashboard`, вставьте JSON ниже как код,
    нажмите `Load`, затем `Import`. Затем добавьте или обновите две панели
    `Time series` с ClickHouse datasource: «Температура» и «Влажность». В каждой
    выберите SQL editor (режим кода) и Query type `Time series`.
 
-```json
-{
-  "id": null,
-  "uid": "adkxztz",
-  "title": "Company Overview",
-  "schemaVersion": 17,
-  "version": 0,
-  "panels": [],
-  "time": {"from": "now-24h", "to": "now"}
-}
-```
 
 SQL для панели «Температура» Company 1:
 
